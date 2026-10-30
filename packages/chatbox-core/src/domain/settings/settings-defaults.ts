@@ -39,7 +39,8 @@ export function createDefaultSettings(): Settings {
     fontSize: 14,
     spellCheck: true,
     defaultPrompt: DEFAULT_SYSTEM_PROMPT,
-    allowReportingAndTracking: true,
+    // 极简版：默认关闭遥测 / 错误上报
+    allowReportingAndTracking: false,
     hasExpiredLicense: false,
     chatboxAIDesktopPromptDismissed: false,
     enableMarkdownRendering: true,
@@ -77,8 +78,11 @@ export function createDefaultSettings(): Settings {
     },
     extension: {
       webSearch: {
-        provider: 'build-in',
+        // 极简版：默认 Tavily（build-in 需要 license）
+        provider: 'tavily',
         tavilyApiKey: '',
+        // 极简版：DeepSeek 搜索专用 key，留空则复用「模型提供方 → DeepSeek」的 key
+        deepseekApiKey: '',
         bochaApiKey: '',
         queritApiKey: '',
         queritMaxResults: 5,
