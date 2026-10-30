@@ -164,6 +164,7 @@ export function getMainRuntimePolicy(env: ChatboxQaEnvironment, options: MainRun
     registerGlobalShortcuts: !qaRuntime.enabled,
     registerProtocolClient: !qaRuntime.enabled,
     requestSingleInstanceLock: options.isPackaged && !qaRuntime.enabled,
-    startAppUpdater: !options.isHarmonyBuild && !qaRuntime.enabled,
+    // 极简版：强制关闭自动更新（main.ts 里那句 if (MAIN_RUNTIME_POLICY.startAppUpdater) 就永远不会进）
+    startAppUpdater: false,
   }
 }
