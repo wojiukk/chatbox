@@ -1,21 +1,18 @@
-import { Flex, Select, Text, UnstyledButton } from '@mantine/core'
+import { Flex, Select, Text } from '@mantine/core'
 import type { Settings } from '@shared/types'
 import { IconCheck, IconX } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { ofetch } from 'ofetch'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { trackJkClickEvent } from '@/analytics/jk'
-import { JK_EVENTS, JK_PAGE_NAMES } from '@/analytics/jk-events'
 import { AdaptiveSelect } from '@/components/AdaptiveSelect'
 import { CheckedFieldRow } from '@/components/settings/CheckedFieldRow'
 import { SettingRow, SettingsPage, SettingsSection } from '@/components/settings/SettingsLayout'
-import { AppTooltip as Tooltip } from '@/components/ui/tooltip'
 import { PROVIDERS_WITH_PARSE_LINK } from '@/packages/web-search'
 import { BochaSearch } from '@/packages/web-search/bocha'
-import { WEB_SEARCH_PROVIDERS, type WebSearchProviderValue } from '@/packages/web-search/constants'
+import { ENABLED_WEB_SEARCH_PROVIDERS, type WebSearchProviderValue } from '@/packages/web-search/constants'
 import { QUERIT_SEARCH_URL } from '@/packages/web-search/querit'
 import { SearxngSearch } from '@/packages/web-search/searxng'
-import platform from '@/platform'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 export const Route = createFileRoute('/settings/web-search')({
@@ -31,6 +28,15 @@ async function checkTavily(apiKey: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: { query: 'Chatbox', search_depth: 'basic', include_domains: [], exclude_domains: [] },
+  })
+}
+
+// 极简版：DeepSeek 官方的 Search API，用来验证 key 是否可用（按成功请求计费，这里只发 1 条）
+async function checkDeepSeek(apiKey: string) {
+  await ofetch('https://api.deepseek.com/v1/tools/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: { query: 'Chatbox', count: 1, need_content: false },
   })
 }
 
@@ -73,19 +79,20 @@ export function RouteComponent() {
   const { t } = useTranslation()
   const setSettings = useSettingsStore((state) => state.setSettings)
   const extension = useSettingsStore((state) => state.extension)
-  const licenseKey = useSettingsStore((state) => state.licenseKey)
   const webSearch = extension.webSearch
   const provider = webSearch.provider
 
   const updateWebSearch = (patch: Partial<WebSearchSettings>) =>
     setSettings({ extension: { ...extension, webSearch: { ...webSearch, ...patch } } })
 
-  const providerNote =
-    provider === 'build-in'
-      ? t('Chatbox Search is a paid feature with advanced capabilities and better performance.')
-      : provider === 'bing'
-        ? t('Bing Search is provided for free use, but it may have limitations and is subject to change by Microsoft.')
-        : undefined
+  // 极简版：历史配置里的 build-in / bing / bocha 等不在开放列表里，进页面就迁到 Tavily，
+  // 否则执行侧会一路回落到 Tavily 而设置页还显示旧选项。
+  useEffect(() => {
+    if (!ENABLED_WEB_SEARCH_PROVIDERS.some((p) => p.value === provider)) {
+      updateWebSearch({ provider: 'tavily' })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <SettingsPage title={t('Web Search')} description={t('The search service used when a model searches the web.')}>
@@ -93,7 +100,6 @@ export function RouteComponent() {
         <SettingRow
           id="search-provider"
           label={t('Search Provider')}
-          description={providerNote}
           status={<ProvidedTools provider={provider} />}
           controlLayout="block"
           control={(fieldId) => (
@@ -101,27 +107,12 @@ export function RouteComponent() {
               id={fieldId}
               comboboxProps={{ withinPortal: true, withArrow: true }}
               aria-label={t('Search Provider') ?? undefined}
-              data={WEB_SEARCH_PROVIDERS.map((p) => ({ value: p.value, label: p.label }))}
+              data={ENABLED_WEB_SEARCH_PROVIDERS.map((p) => ({ value: p.value, label: p.label }))}
               value={provider}
               onChange={(value) => value && updateWebSearch({ provider: value as WebSearchProviderValue })}
             />
           )}
         />
-        {provider === 'searxng' && (
-          <CheckedFieldRow
-            key="searxng"
-            id="searxng-url"
-            label={t('SearXNG Instance URL')}
-            description={t('The SearXNG instance must enable JSON output format in search settings.')}
-            value={webSearch.searxngBaseUrl}
-            onChange={(searxngBaseUrl) => updateWebSearch({ searxngBaseUrl })}
-            placeholder="https://searx.example.com"
-            check={async (url) => {
-              await new SearxngSearch(url).search('Chatbox')
-            }}
-            failureMessage={t('Connection failed!')}
-          />
-        )}
         {provider === 'tavily' && (
           <CheckedFieldRow
             key="tavily"
@@ -133,6 +124,21 @@ export function RouteComponent() {
             check={checkTavily}
             failureMessage={t('API key invalid!')}
             getKeyUrl="https://app.tavily.com?utm_source=chatbox"
+          />
+        )}
+        {provider === 'deepseek' && (
+          <CheckedFieldRow
+            key="deepseek"
+            id="deepseek-api-key"
+            label="DeepSeek API Key"
+            description="Per 1000 successful searches: $0.75. Empty results and failures are not billed. Leave blank to reuse the key configured under Model Provider → DeepSeek."
+            secret
+            value={webSearch.deepseekApiKey}
+            onChange={(deepseekApiKey) => updateWebSearch({ deepseekApiKey })}
+            placeholder="sk-..."
+            check={checkDeepSeek}
+            failureMessage={t('API key invalid!')}
+            getKeyUrl="https://platform.deepseek.com/api_keys"
           />
         )}
         {provider === 'bocha' && (
@@ -162,6 +168,21 @@ export function RouteComponent() {
             check={checkQuerit}
             failureMessage={t('API key invalid!')}
             getKeyUrl="https://www.querit.ai"
+          />
+        )}
+        {provider === 'searxng' && (
+          <CheckedFieldRow
+            key="searxng"
+            id="searxng-url"
+            label={t('SearXNG Instance URL')}
+            description={t('The SearXNG instance must enable JSON output format in search settings.')}
+            value={webSearch.searxngBaseUrl}
+            onChange={(searxngBaseUrl) => updateWebSearch({ searxngBaseUrl })}
+            placeholder="https://searx.example.com"
+            check={async (url) => {
+              await new SearxngSearch(url).search('Chatbox')
+            }}
+            failureMessage={t('Connection failed!')}
           />
         )}
       </SettingsSection>
@@ -207,33 +228,6 @@ export function RouteComponent() {
             )}
           />
         </SettingsSection>
-      )}
-
-      {provider !== 'build-in' && !licenseKey && (
-        <Tooltip
-          label={t(
-            'Note: If you have never had a license before, you can claim it after logging in on the official website. Quota refreshed daily.'
-          )}
-          withArrow
-          multiline
-          maw={280}
-          position="bottom-start"
-        >
-          <UnstyledButton
-            className="self-start px-1 text-xs text-chatbox-tint-tertiary"
-            onClick={() => {
-              trackJkClickEvent(JK_EVENTS.FREE_LICENSE_CLAIM_CLICK, {
-                pageName: JK_PAGE_NAMES.SETTING_PAGE,
-                content: 'settings_websearch',
-              })
-              platform.openLink('https://chatboxai.app/login')
-            }}
-          >
-            {t('You can ')}
-            <span className="text-chatbox-tint-brand underline decoration-dotted">{t('try Chatbox AI')}</span>
-            {t(' for free now!')}
-          </UnstyledButton>
-        </Tooltip>
       )}
     </SettingsPage>
   )
