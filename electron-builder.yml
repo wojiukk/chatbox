@@ -38,6 +38,8 @@ afterSign: .erb/scripts/notarize.js
 #   releaseNotes: See the changelog for details
 
 mac:
+  # 极简版：同时产出 arm64 + x64 两份，不加 ${arch} 会互相覆盖
+  artifactName: ${productName}-${version}-${arch}.${ext}
   # macOS uses .lproj names; electron-builder matches them exactly.
   electronLanguages:
     - en
