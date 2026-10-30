@@ -128,6 +128,12 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # ubuntu-latest 镜像里预装的 cmdline-tools 是 12.0，setup-android@v3 会直接
+      # 报 "Wrong version in preinstalled sdkmanager" 然后失败（Pkg.Revision=12.0）。
+      # 先删掉，让 action 自己装一份干净的。
+      - name: Drop preinstalled Android cmdline-tools
+        run: sudo rm -rf /usr/local/lib/android/sdk/cmdline-tools
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
