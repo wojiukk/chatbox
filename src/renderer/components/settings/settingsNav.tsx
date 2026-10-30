@@ -8,15 +8,12 @@ import {
   IconCategory,
   IconCircleDottedLetterM,
   IconDatabase,
-  IconFileText,
   IconInfoCircle,
-  IconKeyboard,
   IconListDetails,
   IconMessages,
   IconPalette,
   type IconProps,
   IconRobotFace,
-  IconSparkles,
   IconStack2,
   IconTool,
   IconWand,
@@ -80,11 +77,9 @@ export function getSettingsNavGroups(): SettingsNavGroup[] {
     featureFlags.agentMode
       ? { key: 'agent', label: 'Agent & Memory', icon: IconRobotFace }
       : { key: 'agent', label: 'Memory', icon: IconBrain },
-    { key: 'document-parser', label: 'Document Parser', icon: IconFileText },
   ]
 
   return [
-    { title: 'Account', items: [{ key: 'chatbox-ai', label: 'Chatbox AI', noTranslate: true, icon: IconSparkles }] },
     {
       title: 'Models',
       items: [
@@ -109,9 +104,6 @@ export function getSettingsNavGroups(): SettingsNavGroup[] {
       title: 'App',
       items: [
         { key: 'appearance', label: 'Appearance', icon: IconPalette, testId: TestId.settings.navAppearance },
-        ...(platform.type === 'mobile'
-          ? []
-          : [{ key: 'hotkeys' as const, label: 'Keyboard Shortcuts', icon: IconKeyboard }]),
         { key: 'data', label: 'Data & Backup', icon: IconDatabase, testId: TestId.settings.navData },
         { key: 'advanced', label: 'Advanced', icon: IconTool, testId: TestId.settings.navAdvanced },
         { key: 'about', label: 'About & Updates', icon: IconInfoCircle, testId: TestId.settings.navAbout },
@@ -178,7 +170,6 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     ? ([{ page: 'agent', id: 'smart-switching', label: 'Smart Switching' }] satisfies SettingsSearchEntry[])
     : []),
   { page: 'agent', id: 'memory', label: 'Memory' },
-  { page: 'document-parser', id: 'parser-type', label: 'Parser Type' },
   { page: 'appearance', id: 'theme', label: 'Theme' },
   { page: 'appearance', id: 'language', label: 'Language' },
   { page: 'appearance', id: 'theme-color', label: 'Theme color' },
@@ -195,11 +186,7 @@ export const SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
   { page: 'advanced', id: 'diagnostic-logs', label: 'Diagnostic Logs' },
   { page: 'advanced', id: 'error-reporting', label: 'Error Reporting' },
   ...(platform.type === 'desktop'
-    ? ([
-        { page: 'about', id: 'auto-launch', label: 'Launch at system startup' },
-        { page: 'about', id: 'auto-update', label: 'Automatic updates' },
-        { page: 'about', id: 'beta-update', label: 'Beta updates' },
-      ] satisfies SettingsSearchEntry[])
+    ? ([{ page: 'about', id: 'auto-launch', label: 'Launch at system startup' }] satisfies SettingsSearchEntry[])
     : []),
 ]
 
