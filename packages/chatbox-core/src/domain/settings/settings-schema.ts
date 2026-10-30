@@ -342,8 +342,11 @@ const ShortcutSettingSchema = z.preprocess(
 
 const ExtensionSettingsSchema = z.object({
   webSearch: z.object({
-    provider: z.enum(['build-in', 'bing', 'tavily', 'bocha', 'querit', 'searxng']).catch('build-in'),
+    // 极简版：新增 deepseek；catch 默认值从 build-in 改成 tavily（没有 license 时 build-in 必失败）
+    provider: z.enum(['build-in', 'bing', 'tavily', 'deepseek', 'bocha', 'querit', 'searxng']).catch('tavily'),
     tavilyApiKey: z.string().optional(),
+    // 极简版：DeepSeek 搜索专用 key，留空则复用「模型提供方 → DeepSeek」的 key
+    deepseekApiKey: z.string().optional(),
     bochaApiKey: z.string().optional(),
     queritApiKey: z.string().optional(),
     queritMaxResults: z.number().optional(),
