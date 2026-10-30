@@ -24,6 +24,13 @@ interface SkillUpdateResult {
   error?: string
 }
 
+/**
+ * 极简版：这几个内置 skill 一律不暴露。
+ * 其中 a-stock-data / global-stock-data 是后端 manifest 同步下来的，
+ * 本地种子清单里没有，所以只能在渲染层拦截。
+ */
+const HIDDEN_SKILL_NAMES = new Set(['a-stock-data', 'global-stock-data', 'chatbox-product-info'])
+
 const skillsChangeListeners = new Set<() => void>()
 
 export function notifySkillsChanged(): void {
@@ -40,13 +47,17 @@ export function subscribeSkillsChanged(listener: () => void): () => void {
 }
 
 export const skillsController = {
-  discoverSkills(): Promise<SkillInfo[]> {
-    return window.electronAPI.invoke('skills:discover')
+  async discoverSkills(): Promise<SkillInfo[]> {
+    const skills = (await window.electronAPI.invoke('skills:discover')) as SkillInfo[]
+    return Array.isArray(skills) ? skills.filter((skill) => !HIDDEN_SKILL_NAMES.has(skill.name)) : []
   },
 
   loadSkill(
     name: string
   ): Promise<{ metadata: SkillMetadata; body: string; skillRoot?: string; files?: string[] } | null> {
+    if (HIDDEN_SKILL_NAMES.has(name)) {
+      return Promise.resolve(null)
+    }
     return window.electronAPI.invoke('skills:load', name)
   },
 
