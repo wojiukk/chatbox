@@ -84,10 +84,14 @@ import { loadWorkspaceInstructions } from './workspace-instructions'
 
 const IS_HARMONY_BUILD = process.env.CHATBOX_BUILD_TARGET === 'harmony_app'
 const IS_HARMONY_KB_ENABLED = process.env.CHATBOX_HARMONY_KB_ENABLED === 'true'
-const MAIN_RUNTIME_POLICY = getMainRuntimePolicy(process.env, {
-  isHarmonyBuild: IS_HARMONY_BUILD,
-  isPackaged: app.isPackaged,
-})
+// 极简版：强制关闭自动更新（qa-runtime 里也写了 false，这里再兜一层）
+const MAIN_RUNTIME_POLICY = {
+  ...getMainRuntimePolicy(process.env, {
+    isHarmonyBuild: IS_HARMONY_BUILD,
+    isPackaged: app.isPackaged,
+  }),
+  startAppUpdater: false,
+}
 if (process.platform === 'darwin' && MAIN_RUNTIME_POLICY.isQa) {
   // Must run before ready. Accessory keeps a new Electron process from
   // becoming the frontmost app; showInactive() alone is not enough on macOS.
@@ -174,14 +178,16 @@ process.on('uncaughtException', (error) => {
   void flushSentry(2000).finally(() => process.exit(1))
 })
 
+// 极简版：启动时不初始化知识库模块（入口 / 路由 / featureFlag 都已关闭）
+const ENABLE_KNOWLEDGE_BASE = false
 const knowledgeBaseInitPromise =
-  IS_HARMONY_BUILD && !IS_HARMONY_KB_ENABLED
-    ? Promise.resolve()
-    : import('./knowledge-base/index.js')
+  ENABLE_KNOWLEDGE_BASE && !(IS_HARMONY_BUILD && !IS_HARMONY_KB_ENABLED)
+    ? import('./knowledge-base/index.js')
         .then((mod) => mod.getInitPromise())
         .catch((error) => {
           log.error('[KB] Failed to initialize knowledge base during bootstrap:', error)
         })
+    : Promise.resolve()
 
 const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on'])
 
