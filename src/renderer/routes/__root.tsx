@@ -758,7 +758,15 @@ const creteMantineTheme = (scale = 1) =>
   })
 
 // 极简版：这些页面整页下线（功能已关或入口已删），直接输 URL 也弹回首页
-const REMOVED_PATHS = ['/about', '/guide', '/image-creator', '/copilots', '/settings/mcp', '/settings/knowledge-base']
+const REMOVED_PATHS = [
+  '/about',
+  '/guide',
+  '/image-creator',
+  '/copilots',
+  '/settings/mcp',
+  '/settings/knowledge-base',
+  '/settings/advanced',
+]
 
 export const Route = createRootRoute({
   beforeLoad: ({ location }) => {
