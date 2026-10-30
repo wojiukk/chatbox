@@ -5,11 +5,7 @@ import { TestId } from '@shared/automation/testids'
 import {
   IconCode,
   IconDownload,
-  IconHelpCircle,
-  IconInfoCircle,
   IconLayoutSidebarLeftCollapse,
-  IconMessageChatbot,
-  IconPhotoPlus,
   IconPlus,
   type IconProps,
   IconSearch,
@@ -22,7 +18,7 @@ import { type ElementType, useCallback, useEffect, useRef, useState } from 'reac
 import { useTranslation } from 'react-i18next'
 import { AppTooltip as Tooltip } from '@/components/ui/tooltip'
 import Divider from './components/common/Divider'
-import { ICON_SIZE, ICON_STROKE_WIDTH, IconButton, type IconButtonProps } from './components/common/IconButton'
+import { ICON_SIZE, ICON_STROKE_WIDTH, IconButton } from './components/common/IconButton'
 import { ScalableIcon } from './components/common/ScalableIcon'
 import ThemeSwitchButton from './components/dev/ThemeSwitchButton'
 import { useAppTitleBarHeight } from './components/layout/AppTitleBar'
@@ -42,7 +38,6 @@ import { getSidebarModalSx } from './sidebar-drawer'
 import icon from './static/icon.png'
 import { useLanguage } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
-import { installUpdate, useUpdateStore } from './stores/updateStore'
 import { CHATBOX_BUILD_PLATFORM, CHATBOX_BUILD_TARGET } from './variables'
 
 interface ChatboxWebViewPlugin {
@@ -110,14 +105,6 @@ export default function Sidebar() {
     }
     trackingEvent('create_new_conversation', { event_category: 'user' })
   }, [navigate, setShowSidebar, isSmallScreen])
-
-  const handleCreateNewPictureSession = useCallback(() => {
-    navigate({ to: '/image-creator' })
-    if (isSmallScreen) {
-      setShowSidebar(false)
-    }
-    trackingEvent('open_image_creator', { event_category: 'user' })
-  }, [isSmallScreen, setShowSidebar, navigate])
 
   const handleDownloadApp = useCallback(() => {
     void platform.openLink(
@@ -223,14 +210,8 @@ export default function Sidebar() {
         {/* Wide layouts show the app name and the collapse button in the app title bar. */}
         {isSmallScreen && (
           <Flex align="center" justify="space-between" gap="xs" px="md" py="sm" className="border-0">
-            <Flex
-              align="center"
-              gap="xs"
-              miw={0}
-              flex={1}
-              onClick={() => navigate({ to: '/about' })}
-              className="cursor-pointer"
-            >
+            {/* 极简版：标题不再点击跳 /about */}
+            <Flex align="center" gap="xs" miw={0} flex={1}>
               <Image src={icon} w={20} h={20} />
               <Text span c="chatbox-primary" fz={16} lh="24px" fw={600} truncate>
                 Chatbox
@@ -255,20 +236,6 @@ export default function Sidebar() {
             shortcut={isSmallScreen ? undefined : ['mod', 'K']}
             onClick={handleOpenSearch}
           />
-          <SidebarNavRow
-            testId={TestId.sidebar.newImage}
-            label={t('Create Image')}
-            icon={IconPhotoPlus}
-            onClick={handleCreateNewPictureSession}
-          />
-          <SidebarNavRow
-            label={t('My Copilots')}
-            icon={IconMessageChatbot}
-            onClick={() => {
-              navigate({ to: '/copilots' })
-              closeOnSmallScreen()
-            }}
-          />
           <Box
             data-testid={TestId.sidebar.scrollDivider}
             aria-hidden="true"
@@ -284,8 +251,6 @@ export default function Sidebar() {
         </Stack>
 
         <SessionList sessionListViewportRef={sessionListViewportRef} atTopStateChange={setIsSessionListAtTop} />
-
-        <SidebarUpdateBanner />
 
         <Box px="xs" pb="xs" className="empty:hidden">
           <SidebarLowQuotaReminder />
@@ -320,21 +285,6 @@ export default function Sidebar() {
                 }}
               />
             </Box>
-            {!versionHook.isExceeded && (
-              <Tooltip label={t('Help')} openDelay={500} withArrow>
-                <IconButton
-                  icon={IconHelpCircle}
-                  size={footerButtonSize}
-                  iconSize={footerIconSize}
-                  aria-label={t('Help')}
-                  color="chatbox-tertiary"
-                  onClick={() => {
-                    navigate({ to: '/guide' })
-                    closeOnSmallScreen()
-                  }}
-                />
-              </Tooltip>
-            )}
             {FORCE_ENABLE_DEV_PAGES && CHATBOX_BUILD_PLATFORM !== 'web' && (
               <Tooltip label="Dev Tools" openDelay={500} withArrow>
                 <IconButton
@@ -347,15 +297,6 @@ export default function Sidebar() {
                 />
               </Tooltip>
             )}
-            <AboutButton
-              versionHook={versionHook}
-              size={footerButtonSize}
-              iconSize={footerIconSize}
-              onClick={() => {
-                navigate({ to: '/about' })
-                closeOnSmallScreen()
-              }}
-            />
           </Flex>
         </Stack>
         {!isSmallScreen && (
@@ -369,42 +310,6 @@ export default function Sidebar() {
         )}
       </Stack>
     </SwipeableDrawer>
-  )
-}
-
-/**
- * Desktop: shows update banner when an update is downloaded and ready to install.
- * Not shown on mobile (mobile uses dot indicator on About link).
- */
-function SidebarUpdateBanner() {
-  const isMobile = CHATBOX_BUILD_TARGET === 'mobile_app'
-  if (isMobile) return null
-  return <SidebarUpdateBannerInner />
-}
-
-function SidebarUpdateBannerInner() {
-  const { t } = useTranslation()
-  const updateStatus = useUpdateStore((s) => s.status)
-  const updateVersion = useUpdateStore((s) => s.version)
-
-  if (updateStatus !== 'downloaded') return null
-
-  return (
-    <Box px="xs" pb={4}>
-      <Flex
-        align="center"
-        gap="xs"
-        px="sm"
-        py={6}
-        className="rounded-md cursor-pointer bg-chatbox-background-gray-secondary hover:bg-chatbox-background-gray-secondary-hover"
-        onClick={installUpdate}
-      >
-        <ScalableIcon icon={IconDownload} size={ICON_SIZE.inline} className="text-chatbox-brand flex-shrink-0" />
-        <Text size="sm" c="chatbox-primary" lineClamp={1} flex={1}>
-          {`${t('Update ready to install')}${updateVersion ? ` (v${updateVersion})` : ''}`}
-        </Text>
-      </Flex>
-    </Box>
   )
 }
 
@@ -461,51 +366,5 @@ function SidebarNavRow(props: {
       onClick={props.onClick}
       variant="subtle"
     />
-  )
-}
-
-/**
- * About button with update dot indicator.
- * Desktop: shows dot when electron-updater detects update (downloaded/available).
- * Mobile: shows dot when remote API says needCheckUpdate.
- */
-function useShowUpdateDot(versionHook: ReturnType<typeof useVersion>) {
-  const updateStatus = useUpdateStore((s) => s.status)
-  const isMobile = CHATBOX_BUILD_TARGET === 'mobile_app'
-  return isMobile ? versionHook.needCheckUpdate : updateStatus === 'downloaded'
-}
-
-function AboutButton({
-  versionHook,
-  size,
-  iconSize,
-  onClick,
-}: {
-  versionHook: ReturnType<typeof useVersion>
-  size: IconButtonProps['size']
-  iconSize: number
-  onClick: () => void
-}) {
-  const { t } = useTranslation()
-  const showDot = useShowUpdateDot(versionHook)
-  const label = `${t('About')}${/\d/.test(versionHook.version) ? ` (${versionHook.version})` : ''}`
-
-  return (
-    <Tooltip label={label} openDelay={500} withArrow>
-      <Box className="relative">
-        <IconButton
-          icon={IconInfoCircle}
-          size={size}
-          iconSize={iconSize}
-          aria-label={label}
-          data-testid={TestId.sidebar.about}
-          color="chatbox-tertiary"
-          onClick={onClick}
-        />
-        {showDot && (
-          <Box w={8} h={8} bg="chatbox-brand" className="absolute top-1 right-1 pointer-events-none rounded-full" />
-        )}
-      </Box>
-    </Tooltip>
   )
 }
