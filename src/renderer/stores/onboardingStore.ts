@@ -19,7 +19,8 @@ interface OnboardingActions {
 export const onboardingStore = createStore<OnboardingState & OnboardingActions>()(
   persist(
     (set) => ({
-      completed: false,
+      // 极简版：首次启动不再跳 /guide 引导页
+      completed: true,
 
       markCompleted: () => set({ completed: true }),
 
