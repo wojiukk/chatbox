@@ -119,7 +119,8 @@ function Index() {
         isLoggedIn,
         hasLicense,
         hasExpiredLicense,
-        hideForStoreReview: isExceeded || !isExceededResolved,
+        // 极简版：首页永不弹登录 / 授权卡片
+        hideForStoreReview: true,
       }),
     [providers.length, isLoggedIn, hasLicense, hasExpiredLicense, isExceeded, isExceededResolved]
   )
