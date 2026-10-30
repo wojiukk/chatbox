@@ -32,7 +32,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { shouldNavigateToStartPage, shouldSkipOnboardingGuide, splitLaunchPath } from '@shared/dev-launch'
 import { type RemoteConfig, Theme } from '@shared/types'
 import { useQuery } from '@tanstack/react-query'
-import { createRootRoute, Outlet, useLocation } from '@tanstack/react-router'
+import { createRootRoute, Outlet, redirect, useLocation } from '@tanstack/react-router'
 import clsx from 'clsx'
 import { useSetAtom } from 'jotai'
 import { useEffect, useMemo, useRef } from 'react'
@@ -757,7 +757,15 @@ const creteMantineTheme = (scale = 1) =>
     },
   })
 
+// 极简版：这些页面整页下线（功能已关或入口已删），直接输 URL 也弹回首页
+const REMOVED_PATHS = ['/about', '/guide', '/image-creator', '/copilots', '/settings/mcp', '/settings/knowledge-base']
+
 export const Route = createRootRoute({
+  beforeLoad: ({ location }) => {
+    if (REMOVED_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))) {
+      throw redirect({ to: '/' })
+    }
+  },
   component: () => {
     useI18nEffect()
     premiumActions.useAutoValidate() // 每次启动都执行 license 检查，防止用户在lemonsqueezy管理页面中取消了当前设备的激活
