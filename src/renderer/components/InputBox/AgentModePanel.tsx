@@ -52,7 +52,11 @@ import { navigateToSettings } from '@/modals/settings-navigation'
 import { BUILTIN_MCP_SERVERS } from '@/packages/mcp/builtin'
 import { skillsController, subscribeSkillsChanged } from '@/packages/skills/controller'
 import { getWebSearchConfigurationIssue } from '@/packages/web-search/configuration-issue'
-import { WEB_SEARCH_PROVIDERS, type WebSearchProviderValue } from '@/packages/web-search/constants'
+import {
+  ENABLED_WEB_SEARCH_PROVIDERS,
+  WEB_SEARCH_PROVIDERS,
+  type WebSearchProviderValue,
+} from '@/packages/web-search/constants'
 import platform from '@/platform'
 import { useAutoValidate } from '@/stores/premiumActions'
 import { setSessionAgentMode, useSessionAgentMode } from '@/stores/session/agent-mode'
@@ -224,6 +228,10 @@ const AgentModePanel = forwardRef<AgentModePanelHandle, AgentModePanelProps>(fun
   const bochaApiKey = useSettingsStore((s) => s.extension.webSearch.bochaApiKey)
   const queritApiKey = useSettingsStore((s) => s.extension.webSearch.queritApiKey)
   const searxngBaseUrl = useSettingsStore((s) => s.extension.webSearch.searxngBaseUrl)
+  const deepseekSearchApiKey = useSettingsStore((s) => s.extension.webSearch.deepseekApiKey)
+  // 极简版：搜索页没单独填 key 时，复用「模型提供方 → DeepSeek」的 key
+  const deepseekProviderApiKey = useSettingsStore((s) => s.providers?.['deepseek']?.apiKey)
+  const deepseekApiKey = deepseekSearchApiKey || deepseekProviderApiKey
   const webSearchProviderLabel =
     WEB_SEARCH_PROVIDERS.find((p) => p.value === webSearchProvider)?.label ?? webSearchProvider
   const webSearchConfigurationIssue = webBrowsingMode
@@ -231,6 +239,7 @@ const AgentModePanel = forwardRef<AgentModePanelHandle, AgentModePanelProps>(fun
         {
           provider: webSearchProvider,
           tavilyApiKey,
+          deepseekApiKey,
           bochaApiKey,
           queritApiKey,
           searxngBaseUrl,
@@ -254,12 +263,12 @@ const AgentModePanel = forwardRef<AgentModePanelHandle, AgentModePanelProps>(fun
     (provider: WebSearchProviderValue) => {
       return (
         getWebSearchConfigurationIssue(
-          { provider, tavilyApiKey, bochaApiKey, queritApiKey, searxngBaseUrl },
+          { provider, tavilyApiKey, deepseekApiKey, bochaApiKey, queritApiKey, searxngBaseUrl },
           licenseKey
         ) === null
       )
     },
-    [bochaApiKey, licenseKey, queritApiKey, searxngBaseUrl, tavilyApiKey]
+    [bochaApiKey, deepseekApiKey, licenseKey, queritApiKey, searxngBaseUrl, tavilyApiKey]
   )
 
   // MCP state
@@ -766,7 +775,7 @@ const AgentModePanel = forwardRef<AgentModePanelHandle, AgentModePanelProps>(fun
         <>
           <SubPanelHeader title={t('Web Search')} settingsPath="/web-search" />
           <Divider my={4} />
-          {WEB_SEARCH_PROVIDERS.map((provider) => {
+          {ENABLED_WEB_SEARCH_PROVIDERS.map((provider) => {
             const available = isProviderAvailable(provider.value)
             const isSelected = webSearchProvider === provider.value
             return (
