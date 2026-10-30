@@ -19,9 +19,10 @@ export function getDefaultPrompt() {
 }
 
 export function chatSessionSettings(): SessionSettings {
+  // 极简版：不再写死 Chatbox AI / chatboxai-4。
+  // 回退链：settings.defaultChatModel → lastUsedModelStore → chatSessionSettings()，
+  // 前两级都为空时模型选择器会显示「无可用模型」，用户先在「模型提供方」里配一个即可。
   return {
-    provider: ModelProviderEnum.ChatboxAI,
-    modelId: 'chatboxai-4',
     maxContextMessageCount: Number.MAX_SAFE_INTEGER,
   }
 }
