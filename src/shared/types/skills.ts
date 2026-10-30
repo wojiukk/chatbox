@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-export const DEFAULT_ENABLED_BUILTIN_SKILL_NAMES = ['chatbox-product-info', 'vibedrop'] as const
+// 极简版：默认只启用 vibedrop；chatbox-product-info（厂商产品/计费信息）不再默认注入
+export const DEFAULT_ENABLED_BUILTIN_SKILL_NAMES = ['vibedrop'] as const
 
 // ===== Skill Source Types =====
 
