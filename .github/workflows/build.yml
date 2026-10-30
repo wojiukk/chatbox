@@ -134,8 +134,13 @@ jobs:
       - name: Drop preinstalled Android cmdline-tools
         run: sudo rm -rf /usr/local/lib/android/sdk/cmdline-tools
 
+      # 这个 action 的 packages 默认值是 legacy 的 `tools`，而新版 sdkmanager（16.0）
+      # 的仓库里已经没有 `tools` 包了，会报 "Failed to find package 'tools'" 并以 1 退出。
+      # 显式改成 platform-tools：镜像里本来就装好了，等于直接跳过。
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
