@@ -18,7 +18,8 @@ export function RouteComponent() {
   const navigate = useNavigate()
   useEffect(() => {
     if (!isSmallScreen) {
-      navigate({ to: '/settings/chatbox-ai', replace: true })
+      // 极简版：默认进「模型提供方」。这里必须改，否则点设置会直接掉进 Chatbox AI 登录页。
+      navigate({ to: '/settings/provider', replace: true })
     }
   }, [isSmallScreen, navigate])
 
