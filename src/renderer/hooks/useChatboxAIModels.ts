@@ -3,6 +3,7 @@ import { type QueryFilters, useQuery, useQueryClient } from '@tanstack/react-que
 import { useEffect, useMemo } from 'react'
 import { type ChatboxAIModelList, getChatboxAIModelList, getModelManifest } from '@/packages/remote'
 import { useLanguage, useProviderSettings, useSettingsStore } from '@/stores/settingsStore'
+import { featureFlags } from '@/utils/feature-flags'
 
 const CHATBOX_AI_MODELS_QUERY_KEY = 'chatbox-ai-models'
 
@@ -102,29 +103,35 @@ const useChatboxAIModels = () => {
         modelList,
       }
     },
+    // 极简版：Chatbox AI 关闭时完全不拉模型目录
+    enabled: featureFlags.chatboxAi,
     staleTime: 3600 * 1000,
     refetchOnWindowFocus: 'always',
   })
 
+  // 极简版：关闭时返回空数组，避免从持久化 settings 里读出旧模型列表
+  //（只关 query 不管用，chatboxAISettings.models 里仍有历史数据）
   const allChatboxAIModels = useMemo(
-    () => data?.models || chatboxAISettings?.models || [],
+    () => (featureFlags.chatboxAi ? data?.models || chatboxAISettings?.models || [] : []),
     [data, chatboxAISettings?.models]
   )
 
   const chatboxAIImageModels = useMemo(
     () =>
-      data?.imageModels.map(
-        (item) =>
-          ({
-            modelId: item.modelId,
-            nickname: item.modelName,
-            description: item.description,
-            labels: item.labels,
-            capabilities: item.capabilities,
-            type: item.type || 'image',
-            contextWindow: item.contextWindow || undefined,
-          }) satisfies ProviderModelInfo & { description?: string }
-      ) || [],
+      featureFlags.chatboxAi
+        ? data?.imageModels.map(
+            (item) =>
+              ({
+                modelId: item.modelId,
+                nickname: item.modelName,
+                description: item.description,
+                labels: item.labels,
+                capabilities: item.capabilities,
+                type: item.type || 'image',
+                contextWindow: item.contextWindow || undefined,
+              }) satisfies ProviderModelInfo & { description?: string }
+          ) || []
+        : [],
     [data]
   )
 
@@ -137,7 +144,7 @@ const useChatboxAIModels = () => {
     allChatboxAIModels,
     chatboxAIModels,
     chatboxAIImageModels,
-    chatboxAIModelList: data?.modelList || null,
+    chatboxAIModelList: featureFlags.chatboxAi ? data?.modelList || null : null,
     ...others,
   }
 }
