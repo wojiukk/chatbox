@@ -15,7 +15,6 @@ import {
   type IconProps,
   IconRobotFace,
   IconStack2,
-  IconTool,
   IconWand,
   IconWorldWww,
 } from '@tabler/icons-react'
@@ -105,7 +104,7 @@ export function getSettingsNavGroups(): SettingsNavGroup[] {
       items: [
         { key: 'appearance', label: 'Appearance', icon: IconPalette, testId: TestId.settings.navAppearance },
         { key: 'data', label: 'Data & Backup', icon: IconDatabase, testId: TestId.settings.navData },
-        { key: 'advanced', label: 'Advanced', icon: IconTool, testId: TestId.settings.navAdvanced },
+        // 极简版：不提供「高级」页（网络代理 / 诊断日志 / 错误上报）
         { key: 'about', label: 'About & Updates', icon: IconInfoCircle, testId: TestId.settings.navAbout },
       ],
     },
